@@ -16,10 +16,12 @@ The goals / steps of this project are the following:
 [image1]: ./output_images/undistort_output.jpg "Undistorted"
 [image2]: ./test_images/test1.jpg "Road Transformed"
 [output1]: ./output_images/undistort_output2.jpg "Undistorted Test Image"
-[image3]: ./examples/binary_combo_example.jpg "Binary Example"
-[image4]: ./examples/warped_straight_lines.jpg "Warp Example"
+[image3]: ./output_images/binary_combo_example.jpg "Binary Example"
+[image4]: ./output_images/warped_straight_lines.jpg "Warp Example"
 [image5]: ./examples/color_fit_lines.jpg "Fit Visual"
 [image6]: ./examples/example_output.jpg "Output"
+[image7]: ./output_images/histogram.jpg "Histogram"
+[image8]: ./output_images/sliding_window.jpg "Sliding Window"
 [video1]: ./project_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
@@ -55,35 +57,41 @@ To demonstrate this step, distortion correction was applied to one of the test i
 
 #### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
+I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at `pipeline()` method lines #81 through #128 in `transform.py`).
+
+Based on lecture videos, color threshold was done on R channel (in RGB color space) and S channel (in HLS color space). Gradient threshold was applied only in x direction.
+
+Here's an example of my output for this step.
 
 ![alt text][image3]
 
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
+The code for my perspective transform includes a function called `birds_eye_view()`, which appears in lines 130 through 154 in the file `transform.py`.  The `birds_eye_view()` function takes as inputs an image (`img`), as well as camera calibration related params like `mtx` and `dist`.
+
+First, image is undisorted using camera calibration params. Then perspective transform is done using cv2 library. I chose the hardcode the source and destination points in the following manner:
 
 ```python
-src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
+    img_size = (image.shape[1], image.shape[0])   
+    
+    # Source points - defined area of lane line edges
+    src = np.float32([[690,450],[1110,img_size[1]],[175,img_size[1]],[595,450]])
+
+    # 4 destination points to transfer
+    offset = 300 # offset for dst points
+    
+    dst = np.float32([[img_size[0]-offset, 0],[img_size[0]-offset, img_size[1]],
+                      [offset, img_size[1]],[offset, 0]])
 ```
 
 This resulted in the following source and destination points:
 
 | Source        | Destination   | 
 |:-------------:|:-------------:| 
-| 585, 460      | 320, 0        | 
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
+| 690, 450      | 980, 0        | 
+| 1110, 720     | 980, 720      |
+| 175, 720      | 300, 720      |
+| 595, 450      | 300, 0        |
 
 I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
 
@@ -91,7 +99,21 @@ I verified that my perspective transform was working as expected by drawing the 
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+The code for detecting lane resides at `lane.py`.
+
+For the first frame in the video, sliding window search was done (`get_lanes_sliding(binary_warped)`).
+
+**First frame**
+
+Histogram from bottom part of the binary unwarped image was created and then lane start was identified as highest frequency bins from left half and right half.
+
+![alt text][image7]
+
+A sliding window search is done to find lane pixels.
+
+![alt text][image8]
+
+Then I fit my lane lines with a 2nd order polynomial kinda like this:
 
 ![alt text][image5]
 
