@@ -78,10 +78,7 @@ def region_of_interest(img, vertices):
     masked_image = cv2.bitwise_and(img, mask)
     return masked_image
 
-def pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100), R_thresh=(5, 255), sobel_kernel = 9, blur=True):    
-    kernel_size = 5
-    img = cv2.GaussianBlur(img, (kernel_size, kernel_size), 0)
-
+def pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100), R_thresh=(5, 255), sobel_kernel = 3):
     # Pull R
     R = img[:,:,0]
     
@@ -112,20 +109,20 @@ def pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100), R_thresh=(5, 255), s
     combined_binary = np.zeros_like(sx_binary)
     combined_binary[((R_binary == 1)) & ((sx_binary == 1) | (s_binary == 1))] = 1
     
-    # # Define vertices for marked area
-    # left_b = (100, img.shape[0])
-    # right_b = (img.shape[1]-20, img.shape[0])
-    # apex1 = (610, 410)
-    # apex2 = (680, 410)
-    # inner_left_b = (310, img.shape[0])
-    # inner_right_b = (1150, img.shape[0])
-    # inner_apex1 = (700,480)
-    # inner_apex2 = (650,480)
-    # vertices = np.array([[left_b, apex1, apex2, right_b, inner_right_b, \
-    #                       inner_apex1, inner_apex2, inner_left_b]], dtype=np.int32)
+    # Define vertices for marked area
+    left_b = (100, img.shape[0])
+    right_b = (img.shape[1]-20, img.shape[0])
+    apex1 = (610, 410)
+    apex2 = (680, 410)
+    inner_left_b = (310, img.shape[0])
+    inner_right_b = (1150, img.shape[0])
+    inner_apex1 = (700,480)
+    inner_apex2 = (650,480)
+    vertices = np.array([[left_b, apex1, apex2, right_b, inner_right_b, \
+                          inner_apex1, inner_apex2, inner_left_b]], dtype=np.int32)
 
-    # # Select region of interest
-    # combined_binary = region_of_interest(combined_binary, vertices)
+    # Select region of interest
+    combined_binary = region_of_interest(combined_binary, vertices)
     
     return combined_binary
 

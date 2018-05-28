@@ -73,19 +73,19 @@ def get_lanes_sliding(binary_warped):
         win_xleft_high = leftx_current + margin
         win_xright_low = rightx_current - margin
         win_xright_high = rightx_current + margin
+
         # Draw the windows on the visualization image
-        cv2.rectangle(out_img,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),
-        (0,255,0), 3) 
-        cv2.rectangle(out_img,(win_xright_low,win_y_low),(win_xright_high,win_y_high),
-        (0,255,0), 3) 
+        cv2.rectangle(out_img,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high), (0,255,0), 3) 
+        cv2.rectangle(out_img,(win_xright_low,win_y_low),(win_xright_high,win_y_high), (0,255,0), 3) 
+        
         # Identify the nonzero pixels in x and y within the window
-        good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & 
-        (nonzerox >= win_xleft_low) &  (nonzerox < win_xleft_high)).nonzero()[0]
-        good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & 
-        (nonzerox >= win_xright_low) &  (nonzerox < win_xright_high)).nonzero()[0]
+        good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & (nonzerox >= win_xleft_low) &  (nonzerox < win_xleft_high)).nonzero()[0]
+        good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & (nonzerox >= win_xright_low) &  (nonzerox < win_xright_high)).nonzero()[0]
+        
         # Append these indices to the lists
         left_lane_inds.append(good_left_inds)
         right_lane_inds.append(good_right_inds)
+        
         # If you found > minpix pixels, recenter next window on their mean position
         if len(good_left_inds) > minpix:
             leftx_current = np.int(np.mean(nonzerox[good_left_inds]))
@@ -100,12 +100,16 @@ def get_lanes_sliding(binary_warped):
     leftx = nonzerox[left_lane_inds]
     lefty = nonzeroy[left_lane_inds] 
     rightx = nonzerox[right_lane_inds]
-    righty = nonzeroy[right_lane_inds]
+    righty = nonzeroy[right_lane_inds] 
 
     out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
     out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
+
+    # Fit a second order polynomial to each
+    left_fit = np.polyfit(lefty, leftx, 2)
+    right_fit = np.polyfit(righty, rightx, 2)
     
-    return leftx, lefty, rightx, righty, out_img
+    return left_lane_inds, left_fit, right_lane_inds, right_fit, out_img
 
 def fit_lane(fit, nonzerox, nonzeroy, margin = 100):
     lane_inds = ((nonzerox > (fit[0]*(nonzeroy**2) + fit[1]*nonzeroy + fit[2] - margin)) & \
@@ -133,26 +137,12 @@ def fit_lanes(binary_warped, left_fit, right_fit):
     out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
     out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
 
-    
-    non_zero_found_pct = (np.sum(left_lane_inds) + np.sum(right_lane_inds)) / len(nonzeroy)    
-    if non_zero_found_pct < 0.85:
-        leftx, lefty, rightx, righty, out_img = get_lanes_sliding(binary_warped)           
+    # Fit a second order polynomial to each
+    left_fit = np.polyfit(lefty, leftx, 2)
+    right_fit = np.polyfit(righty, rightx, 2)
 
-    return leftx, lefty, rightx, righty, out_img
-    
-def get_lanes(binary_warped, left_fit=[], right_fit=[]):
-    if len(left_fit) == 0 | len(right_fit) == 0:
-        leftx, lefty, rightx, righty, out_img = get_lanes_sliding(binary_warped)
-    else:
-        leftx, lefty, rightx, righty, out_img = fit_lanes(binary_warped, left_fit, right_fit)
-    
-    _left_fit = np.polyfit(lefty, leftx, 2)
-    _right_fit = np.polyfit(righty, rightx, 2)
-
-    if len(_left_fit) > 0: left_fit = _left_fit
-    if len(_right_fit) > 0: right_fit = _right_fit
-    
-    return left_fit, right_fit, out_img
+    return left_lane_inds, left_fit, right_lane_inds, right_fit, out_img
+ 
     
 def draw_lane(img, binary_warped, Minv, left_fit, right_fit, ploty):
     y_eval = np.max(ploty)
