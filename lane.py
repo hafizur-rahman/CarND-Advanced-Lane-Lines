@@ -5,27 +5,6 @@ import cv2
 ym_per_pix = 30/720 # meters per pixel in y dimension
 xm_per_pix = 3.7/700 # meters per pixel in x dimension
 
-class Line():
-    def __init__(self):
-        # was the line detected in the last iteration?
-        self.detected = False  
-        #average x values of the fitted line over the last n iterations
-        self.bestx = None     
-        #polynomial coefficients averaged over the last n iterations
-        self.best_fit = None  
-        #polynomial coefficients for the most recent fit
-        self.current_fit = [np.array([False])]  
-        #radius of curvature of the line in some units
-        self.radius_of_curvature = None 
-        #distance in meters of vehicle center from the line
-        self.line_base_pos = None 
-        #difference in fit coefficients between last and new fits
-        self.diffs = np.array([0,0,0], dtype='float') 
-        #x values for detected line pixels
-        self.allx = None  
-        #y values for detected line pixels
-        self.ally = None
-
 def second_ord_poly(line, val):
     a = line[0]
     b = line[1]
@@ -128,12 +107,12 @@ def get_lanes_sliding(binary_warped):
     
     return leftx, lefty, rightx, righty, out_img
 
-def fit_lane(fit, nonzerox, nonzeroy, margin = 90):
+def fit_lane(fit, nonzerox, nonzeroy, margin = 100):
     lane_inds = ((nonzerox > (fit[0]*(nonzeroy**2) + fit[1]*nonzeroy + fit[2] - margin)) & \
                 (nonzerox < (fit[0]*(nonzeroy**2) + fit[1]*nonzeroy + fit[2] + margin)))
     
     x = nonzerox[lane_inds]
-    y = nonzeroy[lane_inds]    
+    y = nonzeroy[lane_inds]
     
     return x, y, lane_inds
     
@@ -156,31 +135,15 @@ def fit_lanes(binary_warped, left_fit, right_fit):
 
     return leftx, lefty, rightx, righty, out_img
     
-def get_lanes(binary_warped, left_line, right_line):    
-    # Check if lines were last detected; if not, re-run sliding window search
-    if left_line.detected == False | right_line.detected == False:
+def get_lanes(binary_warped, left_fit=[], right_fit=[]):
+    if len(left_fit) == 0 | len(right_fit) == 0:
         leftx, lefty, rightx, righty, out_img = get_lanes_sliding(binary_warped)
     else:
-        leftx, lefty, rightx, righty, out_img = fit_lanes(binary_warped, 
-                                                          left_line.current_fit,
-                                                          right_line.current_fit)
-
+        leftx, lefty, rightx, righty, out_img = fit_lanes(binary_warped, left_fit, right_fit)
+    
     left_fit = np.polyfit(lefty, leftx, 2)
     right_fit = np.polyfit(righty, rightx, 2)
-
-    ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0])
     
-    # Generate x and y values for plotting    
-    left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
-    right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
-    
-    left_curverad = calc_curvature(ploty, left_fitx)
-    right_curverad = calc_curvature(ploty, right_fitx)
-    
-    # Do sanity checks
-    left_fitx  = sanity_check(left_line, left_curverad, left_fitx, left_fit)
-    right_fitx = sanity_check(right_line, right_curverad, right_fitx, right_fit)
-
     return left_fit, right_fit, out_img
     
 def draw_lane(img, binary_warped, Minv, left_fit, right_fit, ploty):
@@ -220,41 +183,3 @@ def draw_lane(img, binary_warped, Minv, left_fit, right_fit, ploty):
         cv2.putText(result, txt, (20, 40 + i * 40), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255), 3)
     
     return result
-
-
-
-def sanity_check(lane, curverad, fitx, fit):       
-    # If lane is detected
-    if lane.detected: 
-        if abs(curverad / lane.radius_of_curvature - 1) < .6:        
-            lane.detected = True
-            lane.current_fit = fit
-            lane.allx = fitx
-            lane.bestx = np.mean(fitx)            
-            lane.radius_of_curvature = curverad
-            lane.current_fit = fit
-        # Else use the previous values
-        else:
-            lane.detected = False
-            fitx = lane.allx
-    # If lane not detected and no curvature defined
-    else:
-        if lane.radius_of_curvature: 
-            if abs(curverad / lane.radius_of_curvature - 1) < 1:            
-                lane.detected = True
-                lane.current_fit = fit
-                lane.allx = fitx
-                lane.bestx = np.mean(fitx)            
-                lane.radius_of_curvature = curverad
-                lane.current_fit = fit
-            else:
-                lane.detected = False
-                fitx = lane.allx      
-        # If curvature defined
-        else:
-            lane.detected = True
-            lane.current_fit = fit
-            lane.allx = fitx
-            lane.bestx = np.mean(fitx)
-            lane.radius_of_curvature = curverad
-    return fitx    
