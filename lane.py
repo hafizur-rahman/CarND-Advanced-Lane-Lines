@@ -133,6 +133,11 @@ def fit_lanes(binary_warped, left_fit, right_fit):
     out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
     out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
 
+    
+    non_zero_found_pct = (np.sum(left_lane_inds) + np.sum(right_lane_inds)) / len(nonzeroy)    
+    if non_zero_found_pct < 0.85:
+        leftx, lefty, rightx, righty, out_img = get_lanes_sliding(binary_warped)           
+
     return leftx, lefty, rightx, righty, out_img
     
 def get_lanes(binary_warped, left_fit=[], right_fit=[]):
@@ -141,8 +146,11 @@ def get_lanes(binary_warped, left_fit=[], right_fit=[]):
     else:
         leftx, lefty, rightx, righty, out_img = fit_lanes(binary_warped, left_fit, right_fit)
     
-    left_fit = np.polyfit(lefty, leftx, 2)
-    right_fit = np.polyfit(righty, rightx, 2)
+    _left_fit = np.polyfit(lefty, leftx, 2)
+    _right_fit = np.polyfit(righty, rightx, 2)
+
+    if len(_left_fit) > 0: left_fit = _left_fit
+    if len(_right_fit) > 0: right_fit = _right_fit
     
     return left_fit, right_fit, out_img
     

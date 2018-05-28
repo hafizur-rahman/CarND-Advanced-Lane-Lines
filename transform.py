@@ -78,7 +78,7 @@ def region_of_interest(img, vertices):
     masked_image = cv2.bitwise_and(img, mask)
     return masked_image
 
-def pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100), R_thresh=(5, 255), sobel_kernel = 3, blur=True):    
+def pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100), R_thresh=(5, 255), sobel_kernel = 9, blur=True):    
     kernel_size = 5
     img = cv2.GaussianBlur(img, (kernel_size, kernel_size), 0)
 
@@ -112,7 +112,7 @@ def pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100), R_thresh=(5, 255), s
     combined_binary = np.zeros_like(sx_binary)
     combined_binary[((R_binary == 1)) & ((sx_binary == 1) | (s_binary == 1))] = 1
     
-    # Define vertices for marked area
+    # # Define vertices for marked area
     # left_b = (100, img.shape[0])
     # right_b = (img.shape[1]-20, img.shape[0])
     # apex1 = (610, 410)
