@@ -145,4 +145,11 @@ Here's a [link to my video result](./project_video_result.mp4)
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.
+I have mainly followed the lecture video and notes with some modification like threshold param etc. and works fine with `project_video.mp4`.
+
+However, the algorithm is not generalized and does not work well with different lighting condition, blurred/absent lane marking, shadow and sharp curves.
+
+The following measures can be taken to make it more robust:
+
+- To combine other thresholds from different color space, use larger kernel size
+- Store recent fits and use average fit when lane can't be identified confidently.
