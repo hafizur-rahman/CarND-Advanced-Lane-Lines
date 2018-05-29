@@ -19,7 +19,7 @@ The goals / steps of this project are the following:
 [image3]: ./output_images/binary_combo_example.jpg "Binary Example"
 [image4]: ./output_images/warped_straight_lines.jpg "Warp Example"
 [image5]: ./examples/color_fit_lines.jpg "Fit Visual"
-[image6]: ./examples/example_output.jpg "Output"
+[image6]: ./output_images/example_output.jpg "Output"
 [image7]: ./output_images/histogram.jpg "Histogram"
 [image8]: ./output_images/sliding_window.jpg "Sliding Window"
 [video1]: ./project_video.mp4 "Video"
@@ -60,6 +60,8 @@ To demonstrate this step, distortion correction was applied to one of the test i
 I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at `pipeline()` method lines #81 through #128 in `transform.py`).
 
 Based on lecture videos, color threshold was done on R channel (in RGB color space) and S channel (in HLS color space). Gradient threshold was applied only in x direction.
+
+To further reduce noise, a ROI (region of interest) mask was applied as well.
 
 Here's an example of my output for this step.
 
@@ -103,8 +105,6 @@ The code for detecting lane resides at `lane.py`.
 
 For the first frame in the video, sliding window search was done (`get_lanes_sliding(binary_warped)`).
 
-**First frame**
-
 Histogram from bottom part of the binary unwarped image was created and then lane start was identified as highest frequency bins from left half and right half.
 
 ![alt text][image7]
@@ -117,13 +117,17 @@ Then I fit my lane lines with a 2nd order polynomial kinda like this:
 
 ![alt text][image5]
 
+For subsequent frames, lane identification was limited to the previously identified region.
+
+(**Note**: Some attempts were made to do sanity check and use best fit when needed. However, it did't not work out well and that code is removed.)
+
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-I did this in lines # through # in my code in `my_other_file.py`
+I did this in lines #16 through #24 in my code in `lane.py`. It's essentially a refactored code from the lecture notes.
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+I implemented this step in lines #147 through #183 in my code in `lane.py` in the function `draw_lane()`.  Here is an example of my result on test images:
 
 ![alt text][image6]
 
@@ -133,7 +137,7 @@ I implemented this step in lines # through # in my code in `yet_another_file.py`
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to my video result](./project_video.mp4)
+Here's a [link to my video result](./project_video_result.mp4)
 
 ---
 
@@ -141,4 +145,4 @@ Here's a [link to my video result](./project_video.mp4)
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.
